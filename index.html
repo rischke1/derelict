@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
@@ -533,6 +534,9 @@ function unlockApp() {
   document.getElementById('password-gate').classList.add('hidden');
   initAfterAuth();
 }
+// Expose to global scope so inline onclick="" handlers can reach them
+window.checkPassword = checkPassword;
+window.unlockApp = unlockApp;
 
 // ========== FIREBASE ==========
 let db = null;
@@ -941,6 +945,7 @@ function renderTasks() {
 }
 
 // ========== STUDY TIMER ==========
+let confettiFired = false;
 function updateTimerDisplay() {
   const s = state.studySeconds;
   const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); const sec = s%60;
@@ -948,10 +953,27 @@ function updateTimerDisplay() {
   if (el) el.textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
   el && (el.className = 'timer-time' + (state.timerRunning?' running':''));
   const goal = 7*3600;
+  const pct = Math.min(100, (s/goal)*100);
   const bar = document.getElementById('study-progress-bar');
-  if (bar) bar.style.width = Math.min(100, (s/goal)*100)+'%';
+  if (bar) bar.style.width = pct+'%';
   document.getElementById('study-stat-text').textContent = h+'h '+m+'m today';
+  // Confetti when goal is first reached
+  if (s >= goal && !confettiFired) {
+    confettiFired = true;
+    fireConfetti();
+  }
+  // Reset flag if timer was reset below goal
+  if (s < goal) confettiFired = false;
   updateStudyLog();
+}
+function fireConfetti() {
+  if (typeof confetti !== 'function') return;
+  // Three bursts for celebration
+  const colors = ['#7c6af7','#a89cff','#3dba7e','#f0a040','#ffffff'];
+  confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 }, colors });
+  setTimeout(() => confetti({ particleCount: 80, spread: 100, origin: { x: 0.2, y: 0.6 }, colors }), 300);
+  setTimeout(() => confetti({ particleCount: 80, spread: 100, origin: { x: 0.8, y: 0.6 }, colors }), 500);
+  setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.4 }, colors }), 800);
 }
 function startTimer() {
   if (state.timerRunning) return;
@@ -1153,7 +1175,13 @@ function renderGoals() {
     chip.style.borderColor = g.color;
     chip.style.color = g.color;
     chip.style.background = isActive ? g.color+'22' : 'transparent';
-    chip.innerHTML = g.name + ' <span onclick="event.stopPropagation();confirmDelete('goal', '+g.id+', null, ''+g.name+'')" style="opacity:0.6;margin-left:2px;">×</span>';
+    const chipLabel = document.createTextNode(g.name + ' ');
+    const delSpan = document.createElement('span');
+    delSpan.textContent = '×';
+    delSpan.style.cssText = 'opacity:0.6;margin-left:2px;cursor:pointer;';
+    delSpan.onclick = (e) => { e.stopPropagation(); confirmDelete('goal', g.id, null, g.name); };
+    chip.appendChild(chipLabel);
+    chip.appendChild(delSpan);
     chip.onclick = () => { if (state.activeGoals.has(g.id)) state.activeGoals.delete(g.id); else state.activeGoals.add(g.id); renderGoals(); };
     chip.ondblclick = (e) => { e.stopPropagation(); openLogGoal(g.id); };
     chips.appendChild(chip);

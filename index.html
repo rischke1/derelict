@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
 :root {
   --bg: #0a0a0b;
@@ -207,6 +209,24 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .modal-cancel { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 12px; }
 .modal-confirm { background: var(--accent); border: none; color: #fff; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 12px; }
 
+
+/* PASSWORD GATE */
+#password-gate { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 0; }
+#password-gate.hidden { display: none; }
+.pw-box { background: var(--bg1); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 36px 40px; width: 320px; text-align: center; }
+.pw-logo { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 4px; }
+.pw-logo span { color: var(--accent2); }
+.pw-sub { font-size: 12px; color: var(--text3); font-family: var(--font-mono); margin-bottom: 28px; letter-spacing: 0.06em; }
+.pw-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 14px; font-size: 14px; font-family: var(--font-mono); outline: none; text-align: center; letter-spacing: 0.1em; margin-bottom: 10px; transition: border 0.15s; }
+.pw-input:focus { border-color: var(--accent); }
+.pw-btn { width: 100%; background: var(--accent); border: none; color: #fff; border-radius: 8px; padding: 10px; font-size: 13px; font-family: var(--font-head); font-weight: 600; cursor: pointer; letter-spacing: 0.04em; transition: opacity 0.15s; margin-bottom: 8px; }
+.pw-btn:hover { opacity: 0.85; }
+.pw-error { font-size: 11px; color: var(--red); font-family: var(--font-mono); min-height: 16px; }
+.pw-hint { font-size: 10px; color: var(--text3); margin-top: 16px; line-height: 1.6; }
+/* FIREBASE SETUP BANNER */
+#firebase-banner { background: var(--accent-dim); border-bottom: 1px solid var(--accent); padding: 5px 16px; display: none; align-items: center; gap: 10px; font-size: 11px; color: var(--accent2); }
+#firebase-banner a { color: var(--accent2); cursor: pointer; text-decoration: underline; }
+
 /* GCAL SETUP */
 #gcal-bar { background: var(--amber-dim); border-bottom: 1px solid var(--amber); padding: 5px 16px; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--amber); }
 #gcal-bar a { color: var(--amber); cursor: pointer; text-decoration: underline; }
@@ -230,6 +250,23 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 </head>
 <body>
 
+<!-- PASSWORD GATE -->
+<div id="password-gate">
+  <div class="pw-box">
+    <div class="pw-logo">NX<span>.</span></div>
+    <div class="pw-sub">PERSONAL OS</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
+    <button class="pw-btn" onclick="checkPassword()">Unlock</button>
+    <div class="pw-error" id="pw-error"></div>
+    <div class="pw-hint">First time? Set your password by typing it and clicking Unlock.<br>It will be saved for future visits.</div>
+  </div>
+</div>
+
+<!-- FIREBASE SETUP BANNER -->
+<div id="firebase-banner">
+  ⚡ Firebase not configured — data saves locally only. <a onclick="showFirebaseSetup()">Connect Firebase →</a>
+</div>
+
 <!-- GCAL NOTICE -->
 <div id="gcal-bar">
   ⚡ Google Calendar not connected — <a onclick="showGCalSetup()">connect your calendar</a> to import events
@@ -245,6 +282,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="topbar-stat" id="stat-study">⏱ <span id="study-stat-text">0h 0m today</span></div>
     <div id="topbar-right">
       <button class="btn-icon" onclick="toggleAI()" id="ai-toggle-btn">✦ AI</button>
+      <button class="btn-icon" onclick="showFirebaseSetup()" id="fb-btn" title="Sync settings">☁ Sync</button>
       <button class="btn-icon" onclick="showGCalSetup()">⊕ Calendar</button>
       <button class="btn-icon" onclick="showIOSExport()">⬡ iOS</button>
     </div>
@@ -474,6 +512,97 @@ const state = {
   aiTyping: false,
 };
 
+// ========== PASSWORD ==========
+const PW_KEY = 'nx_pw_hash';
+
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword() {
+  const pw = document.getElementById('pw-input').value;
+  if (!pw) return;
+  const hash = await hashPassword(pw);
+  const stored = localStorage.getItem(PW_KEY);
+  if (!stored) {
+    // First time — set the password
+    localStorage.setItem(PW_KEY, hash);
+    unlockApp();
+  } else if (hash === stored) {
+    unlockApp();
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password.';
+    document.getElementById('pw-input').value = '';
+    setTimeout(() => document.getElementById('pw-error').textContent = '', 2000);
+  }
+}
+
+function unlockApp() {
+  sessionStorage.setItem('nx_authed', '1');
+  document.getElementById('password-gate').classList.add('hidden');
+  initAfterAuth();
+}
+
+// ========== FIREBASE ==========
+let db = null;
+const FB_KEY = 'nx_firebase_config';
+
+function showFirebaseSetup() { openModal('firebase-modal'); }
+
+async function saveFirebaseConfig() {
+  const raw = document.getElementById('firebase-config-input').value.trim();
+  let config;
+  try { config = JSON.parse(raw); } catch(e) { document.getElementById('firebase-status').textContent = 'Invalid JSON — check your config.'; return; }
+  if (!config.databaseURL) { document.getElementById('firebase-status').textContent = 'Missing databaseURL field.'; return; }
+  localStorage.setItem(FB_KEY, JSON.stringify(config));
+  document.getElementById('firebase-status').textContent = 'Connecting...';
+  const ok = await initFirebase(config);
+  if (ok) {
+    closeModal('firebase-modal');
+    document.getElementById('firebase-banner').style.display = 'none';
+  } else {
+    document.getElementById('firebase-status').textContent = 'Connection failed — check your config and database rules.';
+  }
+}
+
+async function initFirebase(config) {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    else firebase.app();
+    db = firebase.database();
+    // Test connection
+    await db.ref('nx/ping').set(Date.now());
+    // Load all data from Firebase (overrides localStorage)
+    await loadFromFirebase();
+    // Set up live listeners
+    setupFirebaseListeners();
+    return true;
+  } catch(e) { console.warn('Firebase init error', e); db = null; return false; }
+}
+
+async function loadFromFirebase() {
+  const snap = await db.ref('nx').get();
+  if (!snap.exists()) return;
+  const data = snap.val();
+  if (data.tasks) { state.tasks = data.tasks; localStorage.setItem('nx_tasks', JSON.stringify(data.tasks)); }
+  if (data.goals) { state.goals = data.goals; localStorage.setItem('nx_goals', JSON.stringify(data.goals)); }
+  if (data.goalLogs) { state.goalLogs = data.goalLogs; localStorage.setItem('nx_goal_logs', JSON.stringify(data.goalLogs)); }
+  if (data.studyLog) { state.studyLog = data.studyLog; localStorage.setItem('nx_study_log', JSON.stringify(data.studyLog)); }
+  if (data.journalEntries) { state.journalEntries = data.journalEntries; localStorage.setItem('nx_journal', JSON.stringify(data.journalEntries)); }
+  if (data.goalsText !== undefined) { state.goalsText = data.goalsText; localStorage.setItem('nx_goals_text', data.goalsText); }
+  // Re-render everything with fresh data
+  renderWeekCalendar(); renderTasks(); renderJournal(); renderGoals(); updateTopbarStats();
+}
+
+function setupFirebaseListeners() {
+  db.ref('nx/tasks').on('value', snap => { if (snap.exists()) { state.tasks = snap.val(); renderWeekCalendar(); renderTasks(); updateTopbarStats(); } });
+  db.ref('nx/goals').on('value', snap => { if (snap.exists()) { state.goals = snap.val(); state.activeGoals = new Set(state.goals.map(g=>g.id)); renderGoals(); } });
+  db.ref('nx/goalLogs').on('value', snap => { if (snap.exists()) { state.goalLogs = snap.val(); renderGoals(); } });
+  db.ref('nx/studyLog').on('value', snap => { if (snap.exists()) { state.studyLog = snap.val(); updateStudyLog(); renderWeekCalendar(); } });
+  db.ref('nx/goalsText').on('value', snap => { if (snap.exists()) state.goalsText = snap.val(); });
+}
+
 // ========== DATES ==========
 function today() { return fmtDate(new Date()); }
 function fmtDate(d) { return d.toISOString().split('T')[0]; }
@@ -503,6 +632,29 @@ function save() {
   localStorage.setItem('nx_goal_logs', JSON.stringify(state.goalLogs));
   localStorage.setItem('nx_journal', JSON.stringify(state.journalEntries));
   localStorage.setItem('nx_goals_text', state.goalsText);
+  saveToFirebase();
+}
+
+let fbSaveTimer = null;
+function saveToFirebase() {
+  if (!db) return;
+  // Debounce to avoid hammering Firebase on rapid changes
+  clearTimeout(fbSaveTimer);
+  fbSaveTimer = setTimeout(() => {
+    db.ref('nx').update({
+      tasks: state.tasks,
+      goals: state.goals,
+      goalLogs: state.goalLogs,
+      studyLog: state.studyLog,
+      goalsText: state.goalsText,
+    });
+    // Journal entries saved separately (can be large)
+    db.ref('nx/journalEntries').set(state.journalEntries.map(e => ({
+      date: e.date, filename: e.filename || '', type: e.type || 'text',
+      // Don't store base64 PDFs in Firebase (too large) — keep those local only
+      content: e.content && e.content.startsWith('data:') ? '[PDF — stored locally]' : (e.content || '').substring(0, 5000)
+    })));
+  }, 800);
 }
 
 // ========== CALENDAR ==========
@@ -1351,7 +1503,47 @@ if (action === 'toggle_timer') { window.addEventListener('load', () => { state.t
 else if (action === 'show_tasks') { window.addEventListener('load', () => { document.getElementById('tasks-panel').scrollIntoView(); }); }
 else if (action === 'upload_pdf') { window.addEventListener('load', () => { document.getElementById('journal-upload').click(); }); }
 
-window.addEventListener('load', init);
+// Init is now called after password check
+function initAfterAuth() {
+  const fbConfig = localStorage.getItem(FB_KEY);
+  if (fbConfig) {
+    try { initFirebase(JSON.parse(fbConfig)); }
+    catch(e) { console.warn('Firebase restore failed', e); }
+  } else {
+    document.getElementById('firebase-banner').style.display = 'flex';
+  }
+  init();
+}
+
+window.addEventListener('load', () => {
+  // If password already verified this session, skip gate
+  if (sessionStorage.getItem('nx_authed')) {
+    unlockApp();
+  }
+  // else password gate is visible by default
+});
 </script>
+
+<div class="modal-overlay" id="firebase-modal">
+  <div class="modal" style="width:380px;">
+    <h3>Connect Firebase (Global Sync)</h3>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px;">Create a free Firebase Realtime Database and paste your config below. Your data will sync across all devices. <a href="https://console.firebase.google.com" style="color:var(--accent2);" target="_blank">Open Firebase Console →</a></p>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:10px;font-family:var(--font-mono);line-height:1.7;">
+      1. Create project → Realtime Database → Create database (test mode)<br>
+      2. Project Settings → Your apps → Add web app → copy config
+    </div>
+    <textarea id="firebase-config-input" rows="7" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "databaseURL": "https://your-app.firebaseio.com",
+  "projectId": "..."
+}'></textarea>
+    <div id="firebase-status" style="font-size:11px;color:var(--text3);min-height:16px;margin-bottom:6px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('firebase-modal')">Cancel</button>
+      <button class="modal-confirm" onclick="saveFirebaseConfig()">Connect & Sync</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

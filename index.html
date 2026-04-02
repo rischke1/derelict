@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS — Personal OS</title>
+<title>DERELICT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -57,10 +57,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .panel-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px; }
 
 /* TOPBAR */
-#logo { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+#logo { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
 #logo span { color: var(--accent2); }
-.topbar-stat { display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); padding: 3px 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: 5px; }
-.topbar-stat .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+.topbar-stat { display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); padding: 3px 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: 5px; transition: border-color 0.3s, color 0.3s; }
+.topbar-stat .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber); animation: pulse 2s infinite; transition: background 0.3s; }
+.topbar-stat.all-done { border-color: var(--green); color: var(--green); }
+.topbar-stat.all-done .dot { background: var(--green); }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
 #topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .btn-icon { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); cursor: pointer; padding: 5px 10px; font-size: 11px; font-family: var(--font-body); transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
@@ -74,18 +76,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cal-nav { background: none; border: 1px solid var(--border); color: var(--text2); cursor: pointer; border-radius: 5px; padding: 3px 7px; font-size: 11px; transition: all 0.15s; }
 .cal-nav:hover { border-color: var(--border2); color: var(--text); }
 #cal-expand-btn { margin-left: auto; }
-#cal-week-grid { display: grid; grid-template-columns: 48px repeat(7, 1fr); flex: 1; overflow: hidden; }
-#cal-time-col { border-right: 1px solid var(--border); overflow-y: auto; padding-top: 24px; background: var(--bg1); }
+#cal-week-grid { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+#cal-day-headers { display: grid; grid-template-columns: 48px repeat(7, 1fr); flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--bg1); }
+#cal-scroll-body { flex: 1; overflow-y: auto; display: grid; grid-template-columns: 48px repeat(7, 1fr); }
+#cal-time-col { border-right: 1px solid var(--border); background: var(--bg1); padding-top: 0; }
 .time-label { height: 40px; display: flex; align-items: flex-start; padding: 2px 6px 0; font-family: var(--font-mono); font-size: 10px; color: var(--text3); }
-.cal-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.cal-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
 .cal-day-col:last-child { border-right: none; }
-.cal-day-header { text-align: center; padding: 5px 2px; border-bottom: 1px solid var(--border); background: var(--bg1); flex-shrink: 0; }
+.cal-day-header { text-align: center; padding: 5px 2px; background: var(--bg1); }
 .cal-day-name { font-family: var(--font-mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
 .cal-day-num { font-family: var(--font-head); font-size: 16px; font-weight: 600; color: var(--text2); line-height: 1.2; cursor: pointer; transition: color 0.15s; }
 .cal-day-num:hover { color: var(--accent2); }
 .cal-day-num.today { color: var(--accent2); background: var(--accent-dim); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
 .cal-day-num.selected { color: #fff; background: var(--accent); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
-.cal-day-body { flex: 1; overflow-y: auto; position: relative; }
+.cal-day-body { flex: 1; position: relative; }
 .cal-slot { height: 40px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
 .cal-slot:hover { background: var(--bg3); }
 .cal-event { position: absolute; left: 2px; right: 2px; background: var(--accent-dim); border-left: 2px solid var(--accent); border-radius: 3px; padding: 2px 4px; font-size: 10px; color: var(--accent2); overflow: hidden; cursor: pointer; z-index: 2; }
@@ -145,22 +149,42 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #upload-prompt { text-align: center; padding: 12px; background: var(--amber-dim); border: 1px dashed var(--amber); border-radius: 8px; margin: 8px; }
 #upload-prompt p { color: var(--amber); font-size: 11px; margin-bottom: 6px; }
 #upload-btn { background: var(--amber-dim); border: 1px solid var(--amber); color: var(--amber); padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 11px; }
-#goals-text-area { display: none; flex-direction: column; }
+#goals-text-area { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; }
 #goals-text-area.open { display: flex; }
-#goals-text { width: 100%; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 10px; font-family: var(--font-body); font-size: 12px; resize: none; outline: none; line-height: 1.6; flex: 1; min-height: 100px; }
+.notes-inner { background: var(--bg1); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 90vw; height: 88vh; display: flex; flex-direction: column; padding: 20px; gap: 10px; }
+.notes-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.notes-title { font-family: var(--font-head); font-size: 14px; font-weight: 600; color: var(--text); }
+#goals-text { width: 100%; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 14px; font-family: var(--font-body); font-size: 14px; resize: none; outline: none; line-height: 1.7; flex: 1; }
 #goals-text:focus { border-color: var(--accent); }
 
-/* GOALS / GRAPH */
+/* GOALS / HEATMAP */
 #goals-panel { }
 .goal-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 20px; font-size: 10px; margin: 2px; cursor: pointer; border: 1px solid; transition: all 0.15s; }
 .goal-chip.active { opacity: 1; }
 .goal-chip.inactive { opacity: 0.4; }
-.goal-chips { margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 2px; }
-#goals-chart-container { height: 140px; margin-bottom: 8px; }
-#add-goal-form { display: flex; gap: 5px; flex-wrap: wrap; }
-#add-goal-form input { flex: 1; min-width: 80px; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 5px 8px; font-size: 11px; font-family: var(--font-body); outline: none; }
-#add-goal-form input:focus { border-color: var(--accent); }
-.goal-type-sel { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 5px; padding: 5px 6px; font-size: 11px; outline: none; }
+.goal-chips { margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 2px; }
+#goals-heatmap-container { overflow-x: auto; overflow-y: auto; flex: 1; }
+.heatmap-wrap { display: flex; gap: 0; }
+.heatmap-date-col { display: flex; flex-direction: column-reverse; gap: 2px; padding-right: 6px; flex-shrink: 0; }
+.heatmap-date-label { height: 18px; font-family: var(--font-mono); font-size: 9px; color: var(--text3); display: flex; align-items: center; white-space: nowrap; }
+.heatmap-date-label.today-row { color: var(--accent2); font-weight: 600; }
+.heatmap-goals-grid { display: flex; gap: 2px; }
+.heatmap-goal-col { display: flex; flex-direction: column; gap: 0; align-items: center; }
+.heatmap-goal-header { font-family: var(--font-mono); font-size: 9px; color: var(--text2); writing-mode: vertical-rl; transform: rotate(180deg); text-align: left; padding: 4px 2px; white-space: nowrap; height: 64px; overflow: hidden; text-overflow: ellipsis; }
+.heatmap-goal-header.today-col { color: var(--accent2); }
+.heatmap-cells { display: flex; flex-direction: column-reverse; gap: 2px; }
+.hm-cell { width: 18px; height: 18px; border-radius: 3px; cursor: pointer; transition: transform 0.1s; flex-shrink: 0; }
+.hm-cell:hover { transform: scale(1.2); z-index: 2; }
+.hm-cell.today-row { outline: 1px solid var(--accent2); outline-offset: 1px; }
+/* Goal popout */
+#goals-popout { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; }
+#goals-popout.open { display: flex; }
+.popout-inner { background: var(--bg1); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 90vw; height: 88vh; display: flex; flex-direction: column; padding: 20px; gap: 12px; }
+.popout-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.popout-title { font-family: var(--font-head); font-size: 14px; font-weight: 600; color: var(--text); }
+#popout-chart-container { flex: 1; min-height: 0; }
+#popout-goal-select { background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: 12px; font-family: var(--font-body); outline: none; }
+#popout-goal-select:focus { border-color: var(--accent); }
 
 /* STUDY TIMER */
 #study-panel { border-right: none; border-left: 1px solid var(--border); }
@@ -182,22 +206,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .study-log-entry .day { color: var(--text2); }
 .study-log-entry .hrs { font-family: var(--font-mono); color: var(--green); }
 
-/* AI ASSISTANT */
-#ai-panel { position: fixed; right: 0; top: 52px; bottom: 0; width: 320px; background: var(--bg1); border-left: 1px solid var(--border); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 200; }
-#ai-panel.open { transform: translateX(0); }
-#ai-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.ai-msg { max-width: 85%; padding: 8px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; }
-.ai-msg.user { align-self: flex-end; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--text); border-radius: 10px 10px 2px 10px; }
-.ai-msg.assistant { align-self: flex-start; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 10px 10px 10px 2px; }
-.ai-msg.thinking { color: var(--text3); font-style: italic; }
-#ai-input-area { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 6px; }
-#ai-input { flex: 1; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 7px 10px; font-size: 12px; font-family: var(--font-body); outline: none; resize: none; min-height: 36px; max-height: 100px; }
-#ai-input:focus { border-color: var(--accent); }
-#ai-send { background: var(--accent); border: none; color: #fff; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 12px; transition: opacity 0.15s; }
-#ai-send:hover { opacity: 0.8; }
-#ai-context { padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); }
-#ai-context p { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
-
 /* MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
@@ -214,7 +222,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #password-gate { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 0; }
 #password-gate.hidden { display: none; }
 .pw-box { background: var(--bg1); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 36px 40px; width: 320px; text-align: center; }
-.pw-logo { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 4px; }
+.pw-logo { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 4px; }
 .pw-logo span { color: var(--accent2); }
 .pw-sub { font-size: 12px; color: var(--text3); font-family: var(--font-mono); margin-bottom: 28px; letter-spacing: 0.06em; }
 .pw-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 14px; font-size: 14px; font-family: var(--font-mono); outline: none; text-align: center; letter-spacing: 0.1em; margin-bottom: 10px; transition: border 0.15s; }
@@ -253,7 +261,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <!-- PASSWORD GATE -->
 <div id="password-gate">
   <div class="pw-box">
-    <div class="pw-logo">NX<span>.</span></div>
+    <div class="pw-logo">DERELICT<span>.</span></div>
     <div class="pw-sub">PERSONAL OS</div>
     <input class="pw-input" type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
     <button class="pw-btn" onclick="checkPassword()">Unlock</button>
@@ -277,11 +285,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
   <!-- TOPBAR -->
   <div id="topbar">
-    <div id="logo">NX<span>.</span></div>
-    <div class="topbar-stat"><span class="dot"></span><span id="stat-tasks">0/0 tasks</span></div>
+    <div id="logo">DERELICT<span>.</span></div>
+    <div class="topbar-stat" id="stat-tasks-wrapper"><span class="dot"></span><span id="stat-tasks">0/0 tasks</span></div>
     <div class="topbar-stat" id="stat-study">⏱ <span id="study-stat-text">0h 0m today</span></div>
     <div id="topbar-right">
-      <button class="btn-icon" onclick="toggleAI()" id="ai-toggle-btn">✦ AI</button>
       <button class="btn-icon" onclick="showFirebaseSetup()" id="fb-btn" title="Sync settings">☁ Sync</button>
       <button class="btn-icon" onclick="showGCalSetup()">⊕ Calendar</button>
       <button class="btn-icon" onclick="showIOSExport()">⬡ iOS</button>
@@ -339,12 +346,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           </select>
           <button class="btn-add" onclick="addTask()">+</button>
         </div>
-        <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;">
-          <button class="btn-icon" onclick="setTaskTag('work')" id="tag-work-btn" style="font-size:10px;">Work</button>
-          <button class="btn-icon" onclick="setTaskTag('health')" id="tag-health-btn" style="font-size:10px;">Health</button>
-          <button class="btn-icon" onclick="setTaskTag('personal')" id="tag-personal-btn" style="font-size:10px;">Personal</button>
-          <span style="font-size:10px;color:var(--text3);margin-left:auto;align-self:center;" id="active-tag-label">no tag</span>
-        </div>
+
         <div id="task-list"></div>
       </div>
     </div>
@@ -385,7 +387,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <button class="page-btn" onclick="journalNav(1)">Next →</button>
         </div>
         <div id="goals-text-area">
-          <textarea id="goals-text" placeholder="Write out your goals, reflections, intentions…" rows="6" oninput="saveGoalsText()"></textarea>
+          <div class="notes-inner">
+            <div class="notes-header">
+              <span class="notes-title">Notes & Intentions</span>
+              <button class="btn-icon" onclick="toggleGoalsText()" style="font-size:11px;">✕ Close</button>
+            </div>
+            <textarea id="goals-text" placeholder="Write out your goals, reflections, intentions…" oninput="saveGoalsText()"></textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -394,37 +402,22 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="panel" id="goals-panel">
       <div class="panel-header">
         <span class="panel-title">Goals</span>
-        <button class="btn-add" style="font-size:10px;padding:3px 8px;" onclick="openAddGoal()">+ Goal</button>
-      </div>
-      <div class="panel-body">
-        <div class="goal-chips" id="goal-chips"></div>
-        <div id="goals-chart-container">
-          <canvas id="goals-chart"></canvas>
+        <div style="display:flex;gap:5px;">
+          <button class="btn-icon" style="font-size:10px;padding:3px 8px;" onclick="openGoalsPopout()">↗ Chart</button>
+          <button class="btn-add" style="font-size:10px;padding:3px 8px;" onclick="openAddGoal()">+ Goal</button>
         </div>
-        <div id="goal-entries-area" style="margin-top:6px;"></div>
+      </div>
+      <div class="panel-body" style="display:flex;flex-direction:column;padding:8px;gap:0;">
+        <div class="goal-chips" id="goal-chips"></div>
+        <div id="goals-heatmap-container"></div>
+        <div id="goal-log-area" style="margin-top:6px;"></div>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- AI PANEL (sidebar) -->
-<div id="ai-panel">
-  <div class="panel-header">
-    <span class="panel-title">✦ AI Assistant</span>
-    <button class="btn-icon" onclick="toggleAI()" style="font-size:10px;">✕</button>
-  </div>
-  <div id="ai-context">
-    <p id="ai-ctx-text">No context loaded. Click a day to load context.</p>
-  </div>
-  <div id="ai-messages">
-    <div class="ai-msg assistant">Hey! I'm your personal AI. Ask me about your schedule, tasks, goals — or just chat. I have context from your dashboard.</div>
-  </div>
-  <div id="ai-input-area">
-    <textarea id="ai-input" placeholder="Ask anything…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
-    <button id="ai-send" onclick="sendAIMessage()">↑</button>
-  </div>
-</div>
+
 
 <!-- MODALS -->
 <div class="modal-overlay" id="add-goal-modal">
@@ -507,9 +500,6 @@ const state = {
   activeGoalIdx: null,
   journalPage: 0,
   activeGoals: new Set(),
-  goalsChart: null,
-  aiConversation: [],
-  aiTyping: false,
 };
 
 // ========== PASSWORD ==========
@@ -671,31 +661,43 @@ function renderWeekCalendar() {
   document.getElementById('cal-month').textContent =
     (ws.getMonth()===we.getMonth() ? mn[ws.getMonth()] : mn[ws.getMonth()]+' / '+mn[we.getMonth()]) + ' ' + ws.getFullYear();
 
-  // Time labels
-  const timeCol = document.getElementById('cal-time-col');
-  timeCol.innerHTML = '<div style="height:24px;"></div>';
+  // Rebuild the week grid into header row + shared scroll body
+  const grid = document.getElementById('cal-week-grid');
+  grid.innerHTML = '';
+
+  // Header row
+  const headerRow = document.createElement('div');
+  headerRow.id = 'cal-day-headers';
+  // Time gutter header
+  const gutterHdr = document.createElement('div');
+  gutterHdr.style.cssText = 'border-right:1px solid var(--border);background:var(--bg1);';
+  headerRow.appendChild(gutterHdr);
+
+  // Scrollable body
+  const scrollBody = document.createElement('div');
+  scrollBody.id = 'cal-scroll-body';
+
+  // Time labels in scroll body
+  const timeCol = document.createElement('div');
+  timeCol.id = 'cal-time-col';
   for (let h = 0; h < 24; h++) {
     const lbl = document.createElement('div');
     lbl.className = 'time-label';
-    lbl.textContent = (h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM');
+    lbl.textContent = (h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm');
     timeCol.appendChild(lbl);
   }
-
-  // Remove old day cols
-  const grid = document.getElementById('cal-week-grid');
-  while(grid.children.length > 1) grid.removeChild(grid.lastChild);
+  scrollBody.appendChild(timeCol);
 
   const td = today();
   const sel = state.selectedDate;
   for (let i = 0; i < 7; i++) {
     const d = new Date(ws); d.setDate(d.getDate()+i);
     const ds = fmtDate(d);
-    const col = document.createElement('div');
-    col.className = 'cal-day-col';
 
-    // Header
-    const hdr = document.createElement('div');
-    hdr.className = 'cal-day-header';
+    // Header cell (goes in headerRow)
+    const hdrCell = document.createElement('div');
+    hdrCell.className = 'cal-day-header';
+    hdrCell.style.cssText = 'border-right:1px solid var(--border);' + (i===6?'border-right:none;':'');
     const name = document.createElement('div');
     name.className = 'cal-day-name';
     name.textContent = dayNames()[d.getDay()];
@@ -703,8 +705,7 @@ function renderWeekCalendar() {
     num.className = 'cal-day-num' + (ds===td?' today':'') + (ds===sel?' selected':'');
     num.textContent = d.getDate();
     num.onclick = () => selectDate(ds);
-    hdr.appendChild(name); hdr.appendChild(num);
-
+    hdrCell.appendChild(name); hdrCell.appendChild(num);
     // Summary dots
     const dots = document.createElement('div');
     dots.style.cssText = 'display:flex;justify-content:center;gap:2px;margin-top:2px;';
@@ -723,15 +724,15 @@ function renderWeekCalendar() {
       const sd = document.createElement('div');
       sd.className = 'cal-badge';
       sd.style.background = 'var(--accent)';
-      sd.title = studyH.toFixed(1)+'h study';
+      sd.title = studyH.toFixed(1)+'h work';
       dots.appendChild(sd);
     }
-    hdr.appendChild(dots);
-    col.appendChild(hdr);
+    hdrCell.appendChild(dots);
+    headerRow.appendChild(hdrCell);
 
-    // Time slots
-    const body = document.createElement('div');
-    body.className = 'cal-day-body';
+    // Body col (goes in scrollBody)
+    const col = document.createElement('div');
+    col.className = 'cal-day-col';
     const slotContainer = document.createElement('div');
     slotContainer.style.position = 'relative';
     for (let h = 0; h < 24; h++) {
@@ -739,7 +740,6 @@ function renderWeekCalendar() {
       slot.className = 'cal-slot';
       slotContainer.appendChild(slot);
     }
-    // Events
     const events = (state.calEvents || []).filter(e => e.date === ds);
     events.forEach(ev => {
       const el = document.createElement('div');
@@ -749,10 +749,17 @@ function renderWeekCalendar() {
       el.textContent = ev.title;
       slotContainer.appendChild(el);
     });
-    body.appendChild(slotContainer);
-    col.appendChild(body);
-    grid.appendChild(col);
+    col.appendChild(slotContainer);
+    scrollBody.appendChild(col);
   }
+
+  grid.appendChild(headerRow);
+  grid.appendChild(scrollBody);
+
+  // Scroll to current hour
+  const scrollTarget = Math.max(0, (new Date().getHours() - 1) * 40 - 8);
+  scrollBody.scrollTop = scrollTarget;
+
   updateTopbarStats();
 }
 
@@ -764,7 +771,6 @@ function selectDate(ds) {
   state.taskViewDate = ds;
   renderWeekCalendar();
   renderTasks();
-  updateAIContext();
 }
 
 // ========== EXPANDED CALENDAR ==========
@@ -928,7 +934,7 @@ function renderTasks() {
     content.appendChild(txt); content.appendChild(meta);
     const del = document.createElement('button');
     del.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 2px;';
-    del.textContent = '×'; del.onclick = () => deleteTask(ds, t.id);
+    del.textContent = '×'; del.onclick = (e) => { e.stopPropagation(); confirmDelete('task', ds, t.id, t.text); };
     item.appendChild(chk); item.appendChild(content); item.appendChild(del);
     list.appendChild(item);
   });
@@ -941,7 +947,7 @@ function updateTimerDisplay() {
   const el = document.getElementById('timer-display-time');
   if (el) el.textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
   el && (el.className = 'timer-time' + (state.timerRunning?' running':''));
-  const goal = 8*3600;
+  const goal = 7*3600;
   const bar = document.getElementById('study-progress-bar');
   if (bar) bar.style.width = Math.min(100, (s/goal)*100)+'%';
   document.getElementById('study-stat-text').textContent = h+'h '+m+'m today';
@@ -1111,85 +1117,241 @@ function confirmLogGoal() {
   closeModal('log-goal-modal');
   renderGoals();
 }
-function renderGoals() {
-  const chips = document.getElementById('goal-chips');
-  chips.innerHTML = '';
-  state.goals.forEach((g,i) => {
-    const chip = document.createElement('div');
-    const isActive = state.activeGoals.has(g.id);
-    chip.className = 'goal-chip ' + (isActive?'active':'inactive');
-    chip.style.borderColor = g.color;
-    chip.style.color = g.color;
-    chip.style.background = isActive ? g.color+'22' : 'transparent';
-    chip.innerHTML = g.name + ' <span onclick="event.stopPropagation();removeGoal('+g.id+')" style="opacity:0.6;margin-left:2px;">×</span>';
-    chip.onclick = () => { if (state.activeGoals.has(g.id)) state.activeGoals.delete(g.id); else state.activeGoals.add(g.id); renderGoals(); };
-    chip.ondblclick = (e) => { e.stopPropagation(); openLogGoal(g.id); };
-    chips.appendChild(chip);
-  });
-  // Log buttons
-  const area = document.getElementById('goal-entries-area');
-  area.innerHTML = '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Double-click a goal chip to log today\'s value</div>';
-  state.goals.filter(g=>state.activeGoals.has(g.id)).forEach(g => {
-    const ds = today();
-    const val = state.goalLogs[g.id]?.[ds];
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);';
-    const name = document.createElement('span'); name.style.cssText='font-size:11px;color:var(--text2);flex:1;'; name.textContent=g.name;
-    const valEl = document.createElement('span'); valEl.style.cssText='font-family:var(--font-mono);font-size:11px;color:'+g.color+';'; valEl.textContent = val !== undefined ? (g.type==='boolean'?(val?'✓ Done':'✗ Skipped'):val+(g.unit?' '+g.unit:'')) : '—';
-    const logBtn = document.createElement('button'); logBtn.className='btn-icon'; logBtn.style.fontSize='10px'; logBtn.textContent='Log'; logBtn.onclick=()=>openLogGoal(g.id);
-    row.appendChild(name); row.appendChild(valEl); row.appendChild(logBtn);
-    area.appendChild(row);
-  });
-  renderGoalsChart();
-}
+
 function removeGoal(id) {
   state.goals = state.goals.filter(g=>g.id!==id);
   state.activeGoals.delete(id);
   save();
   renderGoals();
 }
-function renderGoalsChart() {
-  const activeGoals = state.goals.filter(g=>state.activeGoals.has(g.id));
-  // Last 14 days
-  const labels = [];
-  const today_d = new Date();
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(today_d); d.setDate(d.getDate()-i);
-    labels.push(fmtDate(d));
-  }
-  const shortLabels = labels.map(l=>l.slice(5));
 
-  const datasets = activeGoals.map(g => {
-    const data = labels.map(ds => {
-      const v = state.goalLogs[g.id]?.[ds];
-      return v !== undefined ? v : null;
-    });
-    return { label: g.name, data, borderColor: g.color, backgroundColor: g.color+'33', tension: 0.3, spanGaps: true, pointRadius: 3, pointBackgroundColor: g.color };
+// ── Confirm delete ──
+let pendingDelete = null;
+function confirmDelete(type, a, b, label) {
+  pendingDelete = { type, a, b };
+  document.getElementById('confirm-delete-title').textContent = 'Delete ' + (type==='task'?'task':'goal') + '?';
+  document.getElementById('confirm-delete-body').textContent = '"' + label + '" will be permanently removed.';
+  openModal('confirm-delete-modal');
+}
+function confirmDeleteAction() {
+  if (!pendingDelete) return;
+  if (pendingDelete.type === 'task') deleteTask(pendingDelete.a, pendingDelete.b);
+  else if (pendingDelete.type === 'goal') removeGoal(pendingDelete.a);
+  pendingDelete = null;
+  closeModal('confirm-delete-modal');
+}
+
+// ── Goals heatmap ──
+function renderGoals() {
+  // Chips
+  const chips = document.getElementById('goal-chips');
+  chips.innerHTML = '';
+  state.goals.forEach(g => {
+    const chip = document.createElement('div');
+    const isActive = state.activeGoals.has(g.id);
+    chip.className = 'goal-chip ' + (isActive?'active':'inactive');
+    chip.style.borderColor = g.color;
+    chip.style.color = g.color;
+    chip.style.background = isActive ? g.color+'22' : 'transparent';
+    chip.innerHTML = g.name + ' <span onclick="event.stopPropagation();confirmDelete('goal', '+g.id+', null, ''+g.name+'')" style="opacity:0.6;margin-left:2px;">×</span>';
+    chip.onclick = () => { if (state.activeGoals.has(g.id)) state.activeGoals.delete(g.id); else state.activeGoals.add(g.id); renderGoals(); };
+    chip.ondblclick = (e) => { e.stopPropagation(); openLogGoal(g.id); };
+    chips.appendChild(chip);
   });
 
-  const ctx = document.getElementById('goals-chart');
-  if (state.goalsChart) { state.goalsChart.destroy(); state.goalsChart = null; }
-  if (datasets.length === 0) { ctx.style.display='none'; return; }
-  ctx.style.display='block';
-  state.goalsChart = new Chart(ctx, {
+  // Build 30-day date list (today at bottom = index 0)
+  const days = 30;
+  const td = today();
+  const dates = [];
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    dates.push(fmtDate(d));
+  }
+
+  const activeGoals = state.goals.filter(g => state.activeGoals.has(g.id));
+  const container = document.getElementById('goals-heatmap-container');
+  container.innerHTML = '';
+
+  if (activeGoals.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">◎</div>Add a goal to begin tracking</div>';
+    renderLogArea(activeGoals, td);
+    return;
+  }
+
+  // Pre-compute min/max for numeric goals
+  const minMax = {};
+  activeGoals.forEach(g => {
+    if (g.type === 'number') {
+      const vals = dates.map(ds => state.goalLogs[g.id]?.[ds]).filter(v => v !== undefined && v !== null);
+      minMax[g.id] = { min: vals.length ? Math.min(...vals) : 0, max: vals.length ? Math.max(...vals) : 1 };
+    }
+  });
+
+  const wrap = document.createElement('div');
+  wrap.className = 'heatmap-wrap';
+
+  // Date label column
+  const dateCol = document.createElement('div');
+  dateCol.className = 'heatmap-date-col';
+  // Empty spacer for goal header row height
+  const headerSpacer = document.createElement('div');
+  headerSpacer.style.height = '68px';
+  dateCol.appendChild(headerSpacer);
+  dates.forEach(ds => {
+    const lbl = document.createElement('div');
+    lbl.className = 'heatmap-date-label' + (ds === td ? ' today-row' : '');
+    lbl.textContent = ds.slice(5); // MM-DD
+    dateCol.appendChild(lbl);
+  });
+  wrap.appendChild(dateCol);
+
+  // Goal columns
+  const goalsGrid = document.createElement('div');
+  goalsGrid.className = 'heatmap-goals-grid';
+
+  activeGoals.forEach(g => {
+    const col = document.createElement('div');
+    col.className = 'heatmap-goal-col';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'heatmap-goal-header';
+    hdr.style.color = g.color;
+    hdr.textContent = g.name + (g.unit ? ' ('+g.unit+')' : '');
+    col.appendChild(hdr);
+
+    const cells = document.createElement('div');
+    cells.className = 'heatmap-cells';
+
+    dates.forEach(ds => {
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell' + (ds === td ? ' today-row' : '');
+      const val = state.goalLogs[g.id]?.[ds];
+
+      if (g.type === 'boolean') {
+        if (val) {
+          cell.style.background = g.color;
+        } else {
+          cell.style.background = 'var(--bg3)';
+          cell.style.border = '1px solid var(--border)';
+        }
+      } else {
+        // Numeric — shade
+        if (val !== undefined && val !== null) {
+          const mm = minMax[g.id];
+          const range = mm.max - mm.min || 1;
+          const pct = (val - mm.min) / range; // 0=lightest, 1=darkest
+          // Convert hex color to rgba with alpha based on pct
+          cell.style.background = g.color;
+          cell.style.opacity = 0.15 + pct * 0.85;
+        } else {
+          cell.style.background = 'var(--bg3)';
+          cell.style.border = '1px solid var(--border)';
+        }
+      }
+      cell.title = ds + ': ' + (val !== undefined ? (g.type==='boolean'?(val?'Done':'Skipped'):val+(g.unit?' '+g.unit:'')) : 'no data');
+      cell.onclick = () => openLogGoal(g.id);
+      cells.appendChild(cell);
+    });
+
+    col.appendChild(cells);
+    goalsGrid.appendChild(col);
+  });
+  wrap.appendChild(goalsGrid);
+  container.appendChild(wrap);
+  renderLogArea(activeGoals, td);
+}
+
+function renderLogArea(activeGoals, td) {
+  const area = document.getElementById('goal-log-area');
+  if (!area) return;
+  area.innerHTML = '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;margin-top:4px;">Double-click chip or click cell to log today</div>';
+  activeGoals.forEach(g => {
+    const val = state.goalLogs[g.id]?.[td];
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);';
+    const name = document.createElement('span'); name.style.cssText='font-size:11px;color:var(--text2);flex:1;'; name.textContent=g.name;
+    const valEl = document.createElement('span'); valEl.style.cssText='font-family:var(--font-mono);font-size:11px;color:'+g.color+';'; valEl.textContent = val !== undefined ? (g.type==='boolean'?(val?'✓':'✗'):val+(g.unit?' '+g.unit:'')) : '—';
+    const logBtn = document.createElement('button'); logBtn.className='btn-icon'; logBtn.style.fontSize='10px'; logBtn.textContent='Log'; logBtn.onclick=()=>openLogGoal(g.id);
+    row.appendChild(name); row.appendChild(valEl); row.appendChild(logBtn);
+    area.appendChild(row);
+  });
+}
+
+// ── Goals popout chart ──
+let popoutChart = null;
+function openGoalsPopout() {
+  const numGoals = state.goals.filter(g => g.type === 'number');
+  if (numGoals.length === 0) {
+    alert('Add a numeric goal first to view the chart.');
+    return;
+  }
+  const sel = document.getElementById('popout-goal-select');
+  sel.innerHTML = '';
+  numGoals.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.name + (g.unit?' ('+g.unit+')':'');
+    sel.appendChild(opt);
+  });
+  document.getElementById('goals-popout').classList.add('open');
+  renderPopoutChart();
+}
+function closeGoalsPopout() {
+  document.getElementById('goals-popout').classList.remove('open');
+  if (popoutChart) { popoutChart.destroy(); popoutChart = null; }
+}
+function renderPopoutChart() {
+  const goalId = parseInt(document.getElementById('popout-goal-select').value);
+  const goal = state.goals.find(g=>g.id===goalId);
+  if (!goal) return;
+  const days = 30;
+  const labels = [], data = [];
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = fmtDate(d);
+    labels.push(ds.slice(5));
+    const v = state.goalLogs[goalId]?.[ds];
+    data.push(v !== undefined ? v : null);
+  }
+  const ctx = document.getElementById('popout-chart');
+  if (popoutChart) { popoutChart.destroy(); popoutChart = null; }
+  popoutChart = new Chart(ctx, {
     type: 'line',
-    data: { labels: shortLabels, datasets },
+    data: {
+      labels,
+      datasets: [{
+        label: goal.name + (goal.unit?' ('+goal.unit+')':''),
+        data,
+        borderColor: goal.color,
+        backgroundColor: goal.color+'33',
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 4,
+        pointBackgroundColor: goal.color,
+        fill: true,
+      }]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: true, labels: { color: '#8888a0', font: { family: 'DM Mono', size: 11 } } } },
       scales: {
-        x: { ticks: { color: '#4a4a5e', font: { family: 'DM Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { color: '#4a4a5e', font: { family: 'DM Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        x: { title: { display: true, text: 'Date', color: '#4a4a5e' }, ticks: { color: '#4a4a5e', font: { family: 'DM Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { title: { display: true, text: goal.unit || 'value', color: '#4a4a5e' }, ticks: { color: '#4a4a5e', font: { family: 'DM Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
       }
     }
   });
 }
 
+
 // ========== TOP BAR STATS ==========
 function updateTopbarStats() {
   const ds = today();
   const tasks = state.tasks[ds] || [];
-  document.getElementById('stat-tasks').textContent = tasks.filter(t=>t.done).length+'/'+tasks.length+' tasks';
+  const done = tasks.filter(t=>t.done).length;
+  const total = tasks.length;
+  document.getElementById('stat-tasks').textContent = done+'/'+total+' tasks';
+  const statEl = document.getElementById('stat-tasks-wrapper');
+  if (statEl) statEl.classList.toggle('all-done', total > 0 && done === total);
 }
 
 // ========== GCAL OAUTH ==========
@@ -1300,7 +1462,7 @@ async function fetchGCalEvents() {
 
 // ========== iOS SCRIPTABLE ==========
 function showIOSExport() {
-  const code = `// NEXUS iOS Widget — Scriptable
+  const code = `// DERELICT iOS Widget — Scriptable
 // Replace APP_URL with your hosted app URL
 const APP_URL = "https://YOUR_APP_URL_HERE";
 const KEY = "nexus_data";
@@ -1315,12 +1477,12 @@ widget.backgroundColor = new Color("#0a0a0b");
 
 // === 3 BUTTONS ===
 const btns = [
-  { label: "▶ Study Timer", action: "toggle_timer" },
+  { label: "▶ Work Timer", action: "toggle_timer" },
   { label: "✓ Daily Tasks",  action: "show_tasks"   },
   { label: "↑ Journal PDF",  action: "upload_pdf"   }
 ];
 
-const title = widget.addText("NX.");
+const title = widget.addText("DERELICT.");
 title.font = Font.boldSystemFont(18);
 title.textColor = Color.white();
 widget.addSpacer(8);
@@ -1358,82 +1520,6 @@ function copyIOSCode() {
   setTimeout(()=>btn.textContent='Copy Code', 1500);
 }
 
-// ========== AI ASSISTANT ==========
-function toggleAI() {
-  const panel = document.getElementById('ai-panel');
-  panel.classList.toggle('open');
-  document.getElementById('ai-toggle-btn').classList.toggle('active', panel.classList.contains('open'));
-}
-function updateAIContext() {
-  const ds = state.selectedDate || today();
-  const tasks = state.tasks[ds] || [];
-  const done = tasks.filter(t=>t.done).length;
-  const studyH = ((state.studyLog[today()]||0) + state.studySeconds)/3600;
-  const ctx = `Date: ${ds} | Tasks: ${done}/${tasks.length} done | Study: ${studyH.toFixed(1)}h | Goals: ${state.goals.length} active`;
-  document.getElementById('ai-ctx-text').textContent = ctx;
-}
-function getAISystemPrompt() {
-  const ds = state.selectedDate || today();
-  const tasks = state.tasks[ds] || [];
-  const studyH = ((state.studyLog[today()]||0) + state.studySeconds)/3600;
-  const goals = state.goals.map(g => `${g.name} (${g.type}${g.unit?', '+g.unit:''})`).join(', ');
-  const recentEntries = state.journalEntries.slice(0,3).map(e=>`[${e.date}]: ${e.content.substring(0,200)}`).join('\n');
-  return `You are a personal AI assistant embedded in NEXUS, a personal productivity dashboard. You have access to the user's current data:
-
-Selected date: ${ds}
-Today: ${today()}
-Tasks for selected date (${tasks.length} total, ${tasks.filter(t=>t.done).length} done): ${tasks.map(t=>(t.done?'[x]':'[ ]')+' '+t.text).join(', ')||'none'}
-Study time today: ${studyH.toFixed(1)} hours
-Goals being tracked: ${goals||'none'}
-Recent journal snippet: ${recentEntries||'none'}
-Goals/notes text: ${state.goalsText.substring(0,300)||'none'}
-
-You can help the user analyze their productivity, suggest tasks, reflect on goals, discuss journal entries, or just chat. Be concise, warm, and insightful. If asked to edit the app, explain that direct code editing requires developer access, but you can suggest specific changes.`;
-}
-async function sendAIMessage() {
-  const input = document.getElementById('ai-input');
-  const msg = input.value.trim();
-  if (!msg || state.aiTyping) return;
-  input.value = '';
-  appendAIMsg(msg, 'user');
-  state.aiConversation.push({ role: 'user', content: msg });
-  state.aiTyping = true;
-  const thinking = appendAIMsg('Thinking…', 'assistant thinking');
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: getAISystemPrompt(),
-        messages: state.aiConversation
-      })
-    });
-    const data = await response.json();
-    const text = data.content?.map(c=>c.text||'').join('') || 'Sorry, I could not respond.';
-    thinking.remove();
-    appendAIMsg(text, 'assistant');
-    state.aiConversation.push({ role: 'assistant', content: text });
-    // Keep conversation short
-    if (state.aiConversation.length > 20) state.aiConversation.splice(0,2);
-  } catch(e) {
-    thinking.remove();
-    appendAIMsg('Connection error. Check that you\'re accessing this through Claude.ai or a context that provides the API.', 'assistant');
-  }
-  state.aiTyping = false;
-}
-function appendAIMsg(text, type) {
-  const msgs = document.getElementById('ai-messages');
-  const el = document.createElement('div');
-  el.className = 'ai-msg ' + type;
-  el.textContent = text;
-  msgs.appendChild(el);
-  msgs.scrollTop = msgs.scrollHeight;
-  return el;
-}
-
 // ========== MODALS ==========
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1462,8 +1548,8 @@ function init() {
   studyDiv.style.cssText = 'border-bottom:1px solid var(--border);padding:10px 12px;flex-shrink:0;background:var(--bg1);';
   studyDiv.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <span style="font-family:var(--font-head);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);">Study Timer</span>
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);">goal: 8h</span>
+      <span style="font-family:var(--font-head);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);">Work Timer</span>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);">goal: 7h</span>
     </div>
     <div class="timer-display">
       <div class="timer-time" id="timer-display-time">00:00:00</div>
@@ -1483,17 +1569,9 @@ function init() {
   renderTasks();
   renderJournal();
   renderGoals();
-  updateAIContext();
   updateTopbarStats();
 
-  // Add time labels once
-  for (let h = 0; h < 24; h++) {
-    const lbl = document.createElement('div');
-    lbl.className = 'time-label';
-    const ampm = h === 0 ? '12am' : h < 12 ? h+'am' : h === 12 ? '12pm' : (h-12)+'pm';
-    lbl.textContent = ampm;
-    document.getElementById('cal-time-col').appendChild(lbl);
-  }
+
 }
 
 // Handle URL action params (for iOS)
@@ -1542,6 +1620,34 @@ window.addEventListener('load', () => {
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal('firebase-modal')">Cancel</button>
       <button class="modal-confirm" onclick="saveFirebaseConfig()">Connect & Sync</button>
+    </div>
+  </div>
+</div>
+
+<!-- GOALS POPOUT -->
+<div id="goals-popout">
+  <div class="popout-inner">
+    <div class="popout-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="popout-title">Goal Chart</span>
+        <select id="popout-goal-select" onchange="renderPopoutChart()"></select>
+      </div>
+      <button class="btn-icon" onclick="closeGoalsPopout()" style="font-size:11px;">✕ Close</button>
+    </div>
+    <div id="popout-chart-container">
+      <canvas id="popout-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-delete-modal">
+  <div class="modal" style="width:300px;">
+    <h3 id="confirm-delete-title">Delete?</h3>
+    <p id="confirm-delete-body" style="font-size:12px;color:var(--text2);margin-bottom:14px;"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('confirm-delete-modal')">Cancel</button>
+      <button class="modal-confirm" style="background:var(--red);" onclick="confirmDeleteAction()">Delete</button>
     </div>
   </div>
 </div>
